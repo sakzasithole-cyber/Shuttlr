@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shuttlr — Your Ride to the Action</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════
+   ROOT & RESET
+═══════════════════════════════════════════ */
+:root {
+  --lime: #c8f04a;
+  --lime-dim: #a0c038;
+  --dark: #07070a;
+  --card: #0f0f14;
+  --card2: #141420;
+  --border: #1e1e2a;
+  --border2: #2a2a3a;
+  --text: #e0e0e0;
+  --muted: #666;
+  --dim: #444;
+  --green: #4ade80;
+  --amber: #fbbf24;
+  --red: #f87171;
+  --blue: #60a5fa;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--dark);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  overflow-x: hidden;
+  cursor: none;
+}
+a { text-decoration: none; color: inherit; }
+img { display: block; }
+input, textarea, select { font-family: 'Syne', sans-serif; }
+button { font-family: 'Syne', sans-serif; cursor: none; }
+
+/* ═══════════════════════════════════════════
+   CUSTOM CURSOR
+═══════════════════════════════════════════ */
+#cursor {
+  width: 12px; height: 12px;
+  background: var(--lime);
+  border-radius: 50%;
+  position: fixed; top: 0; left: 0;
+  pointer-events: none; z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: width 0.2s, height 0.2s, background 0.2s;
+  mix-blend-mode: difference;
+}
+#cursor-ring {
+  width: 36px; height: 36px;
+  border: 1.5px solid var(--lime);
+  border-radius: 50%;
+  position: fixed; top: 0; left: 0;
+  pointer-events: none; z-index: 9998;
+  transform: translate(-50%, -50%);
+  transition: all 0.12s ease;
+  opacity: 0.5;
+}
+body:hover #cursor { opacity: 1; }
+
+/* ═══════════════════════════════════════════
+   NOISE OVERLAY
+═══════════════════════════════════════════ */
+.noise-overlay {
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 1000; opacity: 0.4;
+}
+
+/* ═══════════════════════════════════════════
+   NAV
+═══════════════════════════════════════════ */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 500;
+  height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 40px;
+  background: rgba(7,7,10,0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  transition: all 0.3s;
+}
+nav.scrolled { background: rgba(7,7,10,0.98); }
+.nav-logo { display: flex; align-items: center; gap: 10px; }
+.nav-logo-box {
+  width: 34px; height: 34px;
+  background: var(--lime); border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: #000;
+}
+.nav-logo-text { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 3px; }
+.nav-links { display: flex; gap: 32px; align-items: center; }
+.nav-links a {
+  font-size: 13px; color: var(--muted); letter-spacing: 0.5px;
+  transition: color 0.2s; position: relative;
+}
+.nav-links a::after {
+  content: ''; position: absolute; bottom: -4px; left: 0; right: 0;
+  height: 1px; background: var(--lime); transform: scaleX(0);
+  transition: transform 0.2s;
+}
+.nav-links a:hover { color: var(--text); }
+.nav-links a:hover::after { transform: scaleX(1); }
+.nav-cta {
+  padding: 8px 20px;
+  background: var(--lime); border: none; border-radius: 8px;
+  color: #000; font-weight: 700; font-size: 13px;
+  letter-spacing: 0.5px; transition: all 0.2s;
+}
+.nav-cta:hover { background: #d8ff5a; transform: translateY(-1px); }
+.nav-menu-btn { display: none; background: none; border: none; color: var(--text); font-size: 22px; }
+
+/* ═══════════════════════════════════════════
+   HERO
+═══════════════════════════════════════════ */
+#hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column; justify-content: center;
+  position: relative; overflow: hidden;
+  padding: 120px 40px 80px;
+}
+.hero-bg {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(200,240,74,0.08) 0%, transparent 60%);
+}
+.hero-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(200,240,74,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(200,240,74,0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 0%, transparent 100%);
+}
+.hero-inner {
+  position: relative; z-index: 2;
+  max-width: 1100px; margin: 0 auto; width: 100%;
+}
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(200,240,74,0.08); border: 1px solid rgba(200,240,74,0.2);
+  border-radius: 20px; padding: 6px 16px;
+  font-size: 12px; letter-spacing: 3px; color: var(--lime);
+  text-transform: uppercase; margin-bottom: 28px;
+  animation: fadeUp 0.8s ease both;
+}
+.hero-eyebrow span { width: 6px; height: 6px; background: var(--lime); border-radius: 50%; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.5)} }
+
+.hero-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(72px, 12vw, 152px);
+  line-height: 0.92; letter-spacing: 3px;
+  color: var(--text);
+  animation: fadeUp 0.8s 0.1s ease both;
+}
+.hero-title .accent { color: var(--lime); }
+.hero-title .outline {
+  -webkit-text-stroke: 1px rgba(200,240,74,0.3);
+  color: transparent;
+}
+
+.hero-sub {
+  font-size: 18px; color: var(--muted);
+  max-width: 560px; line-height: 1.7; margin-top: 20px;
+  animation: fadeUp 0.8s 0.2s ease both;
+}
+
+.hero-actions {
+  display: flex; gap: 14px; flex-wrap: wrap;
+  margin-top: 36px;
+  animation: fadeUp 0.8s 0.3s ease both;
+}
+.btn-primary {
+  padding: 15px 32px;
+  background: var(--lime); border: none; border-radius: 10px;
+  color: #000; font-weight: 700; font-size: 15px;
+  letter-spacing: 0.5px;
+  transition: all 0.25s; position: relative; overflow: hidden;
+}
+.btn-primary::before {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(255,255,255,0.15);
+  transform: translateX(-100%); transition: transform 0.3s;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(200,240,74,0.35); }
+.btn-primary:hover::before { transform: translateX(0); }
+.btn-secondary {
+  padding: 15px 32px;
+  background: transparent; border: 1.5px solid var(--border2);
+  border-radius: 10px; color: var(--text); font-size: 15px;
+  transition: all 0.2s;
+}
+.btn-secondary:hover { border-color: var(--lime); color: var(--lime); }
+
+.hero-stats {
+  display: flex; gap: 0;
+  margin-top: 56px;
+  border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+  background: var(--card);
+  max-width: 520px;
+  animation: fadeUp 0.8s 0.4s ease both;
+}
+.hero-stat {
+  flex: 1; padding: 20px 16px; text-align: center;
+  border-right: 1px solid var(--border);
+  position: relative; overflow: hidden;
+  transition: background 0.2s;
+}
+.hero-stat:last-child { border-right: none; }
+.hero-stat:hover { background: var(--card2); }
+.hero-stat-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 34px; color: var(--lime); line-height: 1;
+}
+.hero-stat-lbl { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+.hero-scroll {
+  position: absolute; bottom: 36px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  animation: fadeUp 0.8s 0.6s ease both;
+}
+.hero-scroll span { font-size: 11px; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; }
+.scroll-line {
+  width: 1px; height: 40px;
+  background: linear-gradient(to bottom, var(--lime), transparent);
+  animation: scrollPulse 2s infinite;
+}
+@keyframes scrollPulse { 0%{opacity:1;transform:scaleY(1)} 100%{opacity:0;transform:scaleY(0)} }
+
+/* Floating badge */
+.hero-badge {
+  position: absolute; top: 120px; right: 60px;
+  background: var(--card); border: 1px solid rgba(200,240,74,0.3);
+  border-radius: 14px; padding: 14px 18px;
+  animation: float 4s ease-in-out infinite, fadeUp 0.8s 0.5s ease both;
+  backdrop-filter: blur(10px); z-index: 3;
+}
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+.hero-badge-title { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+.hero-badge-content { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
+.hero-badge-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 2s infinite; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════
+   COUNTDOWN
+═══════════════════════════════════════════ */
+#countdown {
+  padding: 80px 40px;
+  background: linear-gradient(180deg, transparent, rgba(200,240,74,0.03), transparent);
+  text-align: center;
+}
+.countdown-label {
+  font-size: 12px; letter-spacing: 5px; color: var(--lime);
+  text-transform: uppercase; margin-bottom: 16px;
+}
+.countdown-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(36px, 6vw, 56px);
+  letter-spacing: 3px; color: var(--text);
+  margin-bottom: 40px;
+}
+.countdown-grid {
+  display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;
+}
+.countdown-item {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 24px 28px;
+  min-width: 100px; position: relative; overflow: hidden;
+  transition: border-color 0.3s;
+}
+.countdown-item::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 2px; background: var(--lime);
+}
+.countdown-item:hover { border-color: rgba(200,240,74,0.4); }
+.countdown-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 56px; color: var(--lime); line-height: 1;
+  display: block;
+}
+.countdown-unit { font-size: 11px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+
+/* ═══════════════════════════════════════════
+   WAITLIST
+═══════════════════════════════════════════ */
+#waitlist {
+  padding: 0 40px 80px;
+  display: flex; justify-content: center;
+}
+.waitlist-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 20px; padding: 48px;
+  max-width: 560px; width: 100%; text-align: center;
+  position: relative; overflow: hidden;
+}
+.waitlist-card::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(200,240,74,0.06), transparent 60%);
+}
+.waitlist-card > * { position: relative; z-index: 1; }
+.waitlist-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 42px; letter-spacing: 2px; margin-bottom: 10px;
+}
+.waitlist-sub { color: var(--muted); font-size: 15px; line-height: 1.6; margin-bottom: 28px; }
+.waitlist-form { display: flex; gap: 10px; flex-wrap: wrap; }
+.waitlist-form input {
+  flex: 1; min-width: 200px;
+  padding: 13px 18px;
+  background: rgba(255,255,255,0.04); border: 1.5px solid var(--border2);
+  border-radius: 10px; color: var(--text); font-size: 14px; outline: none;
+  transition: border-color 0.2s;
+}
+.waitlist-form input:focus { border-color: var(--lime); }
+.waitlist-form input::placeholder { color: var(--dim); }
+.waitlist-form .btn-primary { white-space: nowrap; }
+.waitlist-count {
+  margin-top: 16px; font-size: 13px; color: var(--muted);
+}
+.waitlist-count strong { color: var(--lime); }
+.waitlist-success {
+  display: none; padding: 14px;
+  background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.3);
+  border-radius: 10px; color: var(--green); font-weight: 600; font-size: 14px;
+}
+
+/* ═══════════════════════════════════════════
+   HOW IT WORKS
+═══════════════════════════════════════════ */
+#how {
+  padding: 100px 40px;
+  max-width: 1100px; margin: 0 auto;
+}
+.section-tag {
+  font-size: 11px; letter-spacing: 4px; color: var(--lime);
+  text-transform: uppercase; margin-bottom: 12px; display: block;
+}
+.section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(42px, 6vw, 64px);
+  letter-spacing: 2px; margin-bottom: 10px; line-height: 1;
+}
+.section-sub { color: var(--muted); font-size: 16px; line-height: 1.6; max-width: 500px; margin-bottom: 56px; }
+
+.how-tabs {
+  display: flex; gap: 8px; margin-bottom: 36px; flex-wrap: wrap;
+}
+.how-tab {
+  padding: 10px 22px;
+  background: transparent; border: 1.5px solid var(--border);
+  border-radius: 20px; color: var(--muted); font-size: 14px;
+  transition: all 0.2s; font-family: 'Syne', sans-serif;
+}
+.how-tab.active, .how-tab:hover { border-color: var(--lime); color: var(--lime); background: rgba(200,240,74,0.06); }
+
+.how-steps-rider, .how-steps-operator { display: none; }
+.how-steps-rider.active, .how-steps-operator.active { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+
+.how-step {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 28px 24px;
+  position: relative; overflow: hidden;
+  transition: all 0.3s; cursor: default;
+}
+.how-step::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+  height: 2px; background: var(--lime); transform: scaleX(0);
+  transition: transform 0.3s;
+}
+.how-step:hover { border-color: rgba(200,240,74,0.3); transform: translateY(-4px); }
+.how-step:hover::after { transform: scaleX(1); }
+.how-step-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 72px; color: rgba(200,240,74,0.08);
+  line-height: 1; position: absolute; top: 10px; right: 16px;
+}
+.how-step-icon { font-size: 32px; margin-bottom: 14px; }
+.how-step-title { font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 8px; }
+.how-step-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+.how-step-tag {
+  display: inline-block; margin-top: 12px;
+  background: rgba(200,240,74,0.08); border: 1px solid rgba(200,240,74,0.2);
+  border-radius: 20px; padding: 3px 12px; font-size: 11px; color: var(--lime);
+}
+
+/* ═══════════════════════════════════════════
+   FEATURES
+═══════════════════════════════════════════ */
+#features {
+  padding: 100px 40px;
+  background: linear-gradient(180deg, transparent, rgba(200,240,74,0.02), transparent);
+}
+.features-inner { max-width: 1100px; margin: 0 auto; }
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px; margin-top: 56px;
+}
+.feature-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 28px;
+  transition: all 0.3s; position: relative; overflow: hidden;
+}
+.feature-card:hover { border-color: rgba(200,240,74,0.25); transform: translateY(-3px); }
+.feature-card.featured {
+  border-color: rgba(200,240,74,0.3);
+  background: linear-gradient(135deg, rgba(200,240,74,0.06), var(--card));
+}
+.feature-card.featured::before {
+  content: 'KEY FEATURE';
+  position: absolute; top: 16px; right: 16px;
+  font-size: 9px; letter-spacing: 2px; color: var(--lime);
+  background: rgba(200,240,74,0.1); padding: 3px 8px; border-radius: 4px;
+}
+.feature-icon {
+  width: 48px; height: 48px;
+  background: rgba(200,240,74,0.08); border: 1px solid rgba(200,240,74,0.15);
+  border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  font-size: 22px; margin-bottom: 16px;
+}
+.feature-title { font-weight: 700; font-size: 16px; margin-bottom: 8px; }
+.feature-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+/* ═══════════════════════════════════════════
+   TRUST
+═══════════════════════════════════════════ */
+#trust {
+  padding: 100px 40px;
+  max-width: 1100px; margin: 0 auto;
+}
+.trust-layout {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
+}
+.trust-visual {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 20px; padding: 36px;
+  position: relative; overflow: hidden;
+}
+.trust-visual::before {
+  content: ''; position: absolute; top: -100px; right: -100px;
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, rgba(200,240,74,0.06), transparent 70%);
+}
+.trust-card-row {
+  display: flex; align-items: center; gap: 16px;
+  background: var(--card2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px 20px; margin-bottom: 10px;
+  transition: all 0.2s;
+}
+.trust-card-row:hover { border-color: rgba(200,240,74,0.3); }
+.trust-card-emoji { font-size: 24px; }
+.trust-card-info { flex: 1; }
+.trust-card-title { font-weight: 600; font-size: 14px; }
+.trust-card-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.trust-badge {
+  font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+}
+.badge-green { background: rgba(74,222,128,0.15); color: var(--green); }
+.badge-amber { background: rgba(251,191,36,0.15); color: var(--amber); }
+
+.trust-items { display: flex; flex-direction: column; gap: 20px; }
+.trust-item-row {
+  display: flex; gap: 16px; align-items: flex-start;
+  opacity: 0; transform: translateX(20px);
+  transition: all 0.5s;
+}
+.trust-item-row.visible { opacity: 1; transform: translateX(0); }
+.trust-item-icon {
+  width: 44px; height: 44px; flex-shrink: 0;
+  background: rgba(200,240,74,0.08); border: 1px solid rgba(200,240,74,0.15);
+  border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+}
+.trust-item-title { font-weight: 700; font-size: 15px; margin-bottom: 5px; }
+.trust-item-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+/* ═══════════════════════════════════════════
+   EVENTS TICKER
+═══════════════════════════════════════════ */
+#events-ticker {
+  padding: 60px 0; overflow: hidden;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+}
+.ticker-label {
+  text-align: center;
+  font-size: 11px; letter-spacing: 4px; color: var(--lime);
+  text-transform: uppercase; margin-bottom: 24px;
+}
+.ticker-track {
+  display: flex; gap: 20px;
+  animation: tickerScroll 30s linear infinite;
+  width: max-content;
+}
+.ticker-track:hover { animation-play-state: paused; }
+@keyframes tickerScroll { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+.ticker-item {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--dark); border: 1px solid var(--border);
+  border-radius: 50px; padding: 10px 20px;
+  white-space: nowrap; flex-shrink: 0;
+  transition: border-color 0.2s;
+}
+.ticker-item:hover { border-color: rgba(200,240,74,0.3); }
+.ticker-emoji { font-size: 18px; }
+.ticker-name { font-weight: 600; font-size: 14px; }
+.ticker-loc { font-size: 12px; color: var(--muted); }
+.ticker-dot { width: 6px; height: 6px; background: var(--lime); border-radius: 50%; }
+
+/* ═══════════════════════════════════════════
+   REGISTER SECTION
+═══════════════════════════════════════════ */
+#register {
+  padding: 100px 40px;
+  max-width: 1100px; margin: 0 auto;
+}
+.register-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.register-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 20px; overflow: hidden; transition: all 0.3s;
+}
+.register-card:hover { border-color: rgba(200,240,74,0.3); transform: translateY(-4px); }
+.register-card-header {
+  padding: 32px 32px 28px;
+  border-bottom: 1px solid var(--border);
+  position: relative; overflow: hidden;
+}
+.register-card-header::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 3px; background: var(--lime);
+}
+.register-card-icon { font-size: 42px; margin-bottom: 14px; }
+.register-card-title { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 2px; margin-bottom: 8px; }
+.register-card-sub { font-size: 14px; color: var(--muted); line-height: 1.6; }
+.register-card-body { padding: 28px 32px; }
+.reg-steps { list-style: none; }
+.reg-step {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.reg-step:last-child { border-bottom: none; }
+.reg-step-num {
+  width: 24px; height: 24px; flex-shrink: 0;
+  background: rgba(200,240,74,0.12); border: 1px solid rgba(200,240,74,0.25);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: var(--lime);
+}
+.reg-step-text { flex: 1; }
+.reg-step-title { font-weight: 600; font-size: 13px; }
+.reg-step-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.register-card-footer { padding: 0 32px 32px; }
+
+/* ═══════════════════════════════════════════
+   FAQ ACCORDION
+═══════════════════════════════════════════ */
+#faq {
+  padding: 100px 40px;
+  background: linear-gradient(180deg, transparent, rgba(200,240,74,0.02), transparent);
+}
+.faq-inner { max-width: 760px; margin: 0 auto; }
+.faq-list { margin-top: 48px; }
+.faq-item {
+  border: 1px solid var(--border); border-radius: 12px;
+  margin-bottom: 10px; overflow: hidden;
+  transition: border-color 0.2s;
+}
+.faq-item.open { border-color: rgba(200,240,74,0.3); }
+.faq-question {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 24px; cursor: default;
+  font-weight: 600; font-size: 15px; gap: 16px;
+}
+.faq-question:hover { background: rgba(255,255,255,0.02); }
+.faq-icon {
+  width: 28px; height: 28px; flex-shrink: 0;
+  background: var(--card2); border: 1px solid var(--border2);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 16px; transition: all 0.3s; color: var(--lime);
+}
+.faq-item.open .faq-icon { background: var(--lime); color: #000; transform: rotate(45deg); }
+.faq-answer {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s;
+  padding: 0 24px;
+}
+.faq-answer p { padding-bottom: 20px; color: var(--muted); font-size: 14px; line-height: 1.7; }
+.faq-item.open .faq-answer { max-height: 300px; padding-top: 0; }
+
+/* ═══════════════════════════════════════════
+   SOCIAL PROOF
+═══════════════════════════════════════════ */
+#social {
+  padding: 100px 40px;
+  max-width: 1100px; margin: 0 auto; text-align: center;
+}
+.social-handles {
+  display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+  margin-top: 40px;
+}
+.social-handle {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 50px; padding: 12px 24px;
+  font-weight: 600; font-size: 14px;
+  transition: all 0.2s; text-decoration: none;
+}
+.social-handle:hover { border-color: rgba(200,240,74,0.4); background: var(--card2); transform: translateY(-2px); }
+.social-handle-icon { font-size: 20px; }
+
+/* ═══════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════ */
+footer {
+  padding: 48px 40px 32px;
+  border-top: 1px solid var(--border);
+}
+.footer-inner {
+  max-width: 1100px; margin: 0 auto;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 20px;
+}
+.footer-logo { display: flex; align-items: center; gap: 10px; }
+.footer-logo-box {
+  width: 28px; height: 28px; background: var(--lime); border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: #000;
+}
+.footer-logo-text { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 3px; }
+.footer-links { display: flex; gap: 24px; }
+.footer-links a { font-size: 13px; color: var(--muted); transition: color 0.2s; }
+.footer-links a:hover { color: var(--lime); }
+.footer-copy { font-size: 12px; color: var(--dim); }
+
+/* ═══════════════════════════════════════════
+   MOBILE NAV DRAWER
+═══════════════════════════════════════════ */
+.mobile-drawer {
+  position: fixed; top: 64px; left: 0; right: 0;
+  background: rgba(7,7,10,0.98); border-bottom: 1px solid var(--border);
+  padding: 24px 32px; z-index: 490;
+  transform: translateY(-100%); transition: transform 0.3s;
+  backdrop-filter: blur(20px);
+}
+.mobile-drawer.open { transform: translateY(0); }
+.mobile-drawer a {
+  display: block; padding: 14px 0; font-size: 15px; color: var(--muted);
+  border-bottom: 1px solid var(--border); transition: color 0.2s;
+}
+.mobile-drawer a:hover { color: var(--lime); }
+.mobile-drawer .btn-primary { width: 100%; margin-top: 16px; text-align: center; display: block; padding: 14px; }
+
+/* ═══════════════════════════════════════════
+   SCROLL ANIMATIONS
+═══════════════════════════════════════════ */
+.reveal {
+  opacity: 0; transform: translateY(30px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .trust-layout { grid-template-columns: 1fr; }
+  .register-grid { grid-template-columns: 1fr; }
+  .hero-badge { display: none; }
+  .nav-links { display: none; }
+  .nav-menu-btn { display: block; }
+}
+@media (max-width: 600px) {
+  nav { padding: 0 20px; }
+  #hero { padding: 100px 20px 60px; }
+  .hero-title { font-size: 64px; }
+  #how, #features, #trust, #register, #faq, #social { padding: 60px 20px; }
+  #countdown, #waitlist { padding: 60px 20px; }
+  .waitlist-card { padding: 28px 20px; }
+  .register-card-header, .register-card-body, .register-card-footer { padding-left: 20px; padding-right: 20px; }
+  .footer-inner { flex-direction: column; align-items: flex-start; }
+  .footer-links { flex-wrap: wrap; gap: 16px; }
+}
+
+/* ═══════════════════════════════════════════
+   MISC
+═══════════════════════════════════════════ */
+::selection { background: rgba(200,240,74,0.3); }
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--dark); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- Cursor -->
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- Noise -->
+<div class="noise-overlay"></div>
+
+<!-- Mobile Drawer -->
+<div class="mobile-drawer" id="mobileDrawer">
+  <a href="#how">How It Works</a>
+  <a href="#features">Features</a>
+  <a href="#register">Register</a>
+  <a href="#faq">FAQ</a>
+  <a href="#waitlist" class="btn-primary">Join Waitlist</a>
+</div>
+
+<!-- ═══ NAV ═══ -->
+<nav id="navbar">
+  <div class="nav-logo">
+    <div class="nav-logo-box">S</div>
+    <span class="nav-logo-text">SHUTTLR</span>
+  </div>
+  <div class="nav-links">
+    <a href="#how">How It Works</a>
+    <a href="#features">Features</a>
+    <a href="#trust">Safety</a>
+    <a href="#register">Register</a>
+    <a href="#faq">FAQ</a>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <button class="nav-cta" onclick="document.getElementById('waitlist').scrollIntoView({behavior:'smooth'})">Join Waitlist</button>
+    <button class="nav-menu-btn" onclick="toggleMenu()" id="menuBtn">☰</button>
+  </div>
+</nav>
+
+<!-- ═══ HERO ═══ -->
+<section id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+
+  <div class="hero-badge">
+    <div class="hero-badge-title">Status</div>
+    <div class="hero-badge-content">
+      <span class="hero-badge-dot"></span>
+      Coming Soon · 2026
+    </div>
+  </div>
+
+  <div class="hero-inner">
+    <div class="hero-eyebrow">
+      <span></span>
+      South Africa's Event Transport Marketplace
+    </div>
+    <h1 class="hero-title">
+      YOUR RIDE<br>
+      TO THE<br>
+      <span class="accent">ACTION.</span>
+    </h1>
+    <p class="hero-sub">
+      Compare verified shuttle operators for every festival, concert and sports match. Book securely. Ride safely. Shuttlr is launching on Google Play and the web in 2026.
+    </p>
+    <div class="hero-actions">
+      <button class="btn-primary" onclick="document.getElementById('waitlist').scrollIntoView({behavior:'smooth'})">
+        🔔 Join the Waitlist
+      </button>
+      <button class="btn-secondary" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})">
+        How It Works ↓
+      </button>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-num" id="statEvents">0</div>
+        <div class="hero-stat-lbl">Events Planned</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num" id="statOps">0</div>
+        <div class="hero-stat-lbl">Operators Onboarding</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num" id="statWait">0</div>
+        <div class="hero-stat-lbl">On Waitlist</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-scroll">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- ═══ COUNTDOWN ═══ -->
+<section id="countdown">
+  <div class="countdown-label">Launching In</div>
+  <h2 class="countdown-title">SHUTTLR GOES LIVE FOR RTD 2026</h2>
+  <div class="countdown-grid">
+    <div class="countdown-item">
+      <span class="countdown-num" id="cdDays">--</span>
+      <span class="countdown-unit">Days</span>
+    </div>
+    <div class="countdown-item">
+      <span class="countdown-num" id="cdHours">--</span>
+      <span class="countdown-unit">Hours</span>
+    </div>
+    <div class="countdown-item">
+      <span class="countdown-num" id="cdMins">--</span>
+      <span class="countdown-unit">Minutes</span>
+    </div>
+    <div class="countdown-item">
+      <span class="countdown-num" id="cdSecs">--</span>
+      <span class="countdown-unit">Seconds</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ WAITLIST ═══ -->
+<section id="waitlist">
+  <div class="waitlist-card reveal">
+    <div class="waitlist-title">BE FIRST IN LINE</div>
+    <p class="waitlist-sub">Sign up now to get early access, priority booking and exclusive launch deals when Shuttlr goes live.</p>
+    <div class="waitlist-form" id="waitlistForm">
+      <input type="email" id="waitlistEmail" placeholder="Enter your email address" />
+      <button class="btn-primary" onclick="joinWaitlist()">Notify Me →</button>
+    </div>
+    <div class="waitlist-success" id="waitlistSuccess">
+      ✓ You're on the list! We'll notify you the moment Shuttlr launches.
+    </div>
+    <p class="waitlist-count">Join <strong id="waitlistNum">847</strong> people already waiting</p>
+  </div>
+</section>
+
+<!-- ═══ EVENTS TICKER ═══ -->
+<section id="events-ticker">
+  <div class="ticker-label">Coming to Shuttlr — Upcoming Events</div>
+  <div style="display:flex;overflow:hidden;position:relative;">
+    <div style="position:absolute;left:0;top:0;bottom:0;width:80px;background:linear-gradient(to right,var(--card),transparent);z-index:2;"></div>
+    <div style="position:absolute;right:0;top:0;bottom:0;width:80px;background:linear-gradient(to left,var(--card),transparent);z-index:2;"></div>
+    <div class="ticker-track" id="tickerTrack">
+      <!-- Doubled for seamless loop -->
+    </div>
+  </div>
+</section>
+
+<!-- ═══ HOW IT WORKS ═══ -->
+<section id="how">
+  <div class="reveal">
+    <span class="section-tag">Simple & Transparent</span>
+    <h2 class="section-title">HOW SHUTTLR WORKS</h2>
+    <p class="section-sub">Whether you're booking a ride or listing your shuttle service — it's designed to be quick, safe and clear.</p>
+  </div>
+
+  <div class="how-tabs">
+    <button class="how-tab active" onclick="switchHowTab('rider', this)">🎫 I Want to Book a Ride</button>
+    <button class="how-tab" onclick="switchHowTab('operator', this)">🚐 I Operate Shuttles</button>
+  </div>
+
+  <div class="how-steps-rider active" id="howRider">
+    <div class="how-step reveal">
+      <div class="how-step-num">01</div>
+      <div class="how-step-icon">🔍</div>
+      <div class="how-step-title">Find Your Event</div>
+      <div class="how-step-desc">Browse festivals, concerts and sports matches. Filter by city, date and pick-up point. No account needed to browse.</div>
+      <span class="how-step-tag">Free to browse</span>
+    </div>
+    <div class="how-step reveal">
+      <div class="how-step-num">02</div>
+      <div class="how-step-icon">🆔</div>
+      <div class="how-step-title">Verify Your ID</div>
+      <div class="how-step-desc">Upload your SA ID document and a selfie. One-time verification that unlocks full booking features and builds driver trust.</div>
+      <span class="how-step-tag">One-time only</span>
+    </div>
+    <div class="how-step reveal">
+      <div class="how-step-num">03</div>
+      <div class="how-step-icon">🚐</div>
+      <div class="how-step-title">Compare & Choose</div>
+      <div class="how-step-desc">Multiple verified operators compete for your booking. Sort by price or rating. See the driver's name, photo, PDP and the vehicle plate before you pay.</div>
+      <span class="how-step-tag">Competitive pricing</span>
+    </div>
+    <div class="how-step reveal">
+      <div class="how-step-num">04</div>
+      <div class="how-step-icon">🔒</div>
+      <div class="how-step-title">Pay Securely</div>
+      <div class="how-step-desc">Your payment is held in escrow — not released to the operator until they confirm your seat. Auto-refund if no response in 24 hours.</div>
+      <span class="how-step-tag">Escrow protected</span>
+    </div>
+    <div class="how-step reveal">
+      <div class="how-step-num">05</div>
+      <div class="how-step-icon">🎉</div>
+      <div class="how-step-title">Confirmed — Ride!</div>
+      <div class="how-step-desc">Driver confirms your seat. You get a WhatsApp notification. Show up at the pick-up point and enjoy the event.</div>
+      <span class="how-step-tag">WhatsApp notification</span>
+    </div>
+  </div>
+
+  <div class="how-steps-operator" id="howOperator">
+    <div class="how-step reveal">
+      <div class="how-step-num">01</div>
+      <div class="how-step-icon">🏢</div>
+      <div class="how-step-title">Register Your Company</div>
+      <div class="how-step-desc">Create a business profile with your company name, CIPC registration number and contact details.</div>
+      <span class="how-step-tag">Free to register</span>
+    </div>
+    <div class="how-step reveal">
+      <div class="how-step-num">02</div>
+      <div class="how-step-icon">🪪</div>
+      <div class="how-step-title">Verify Your Identity</div>
+      <div class="how-step-desc">Submit owner SA ID document, a selfie, and your business documents. Verified within 24–48 hours by our team.</div>
+      <span class="how-step-tag">24–48h review</span>
+    </div>
+    <div class="how-step reveal">
+      <div class="how-step-num">03</div>
+      <div class="how-step-icon">📋</div>
+      <div class="how-step-title">Upload Documents</div>
+      <div class="how-step-desc">CIPC certificate, PDP / operator's licence, vehicle roadworthy certificates. Each vehicle and driver gets verified individually.</div>
+      <span class="how-step-tag">Once-off per vehicle</span>
+    </div>
+    <div class="how-step reveal">
+      <div class="how-step-num">04</div>
+      <div class="how-step-icon">👥</div>
+      <div class="how-step-title">Add Drivers & Vehicles</div>
+      <div class="how-step-desc">Register each driver with their PDP number and photo. Add each vehicle with its plate, make and roadworthy cert. Passengers see all of this.</div>
+      <span class="how-step-tag">Full transparency</span>
+    </div>
+    <div class="how-step reveal">
+      <div class="how-step-num">05</div>
+      <div class="how-step-icon">💰</div>
+      <div class="how-step-title">List & Earn</div>
+      <div class="how-step-desc">Set your own prices and departure times. Confirm bookings within 24 hours. Payments released to your balance instantly. Withdraw anytime.</div>
+      <span class="how-step-tag">Only 10% commission</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FEATURES ═══ -->
+<section id="features">
+  <div class="features-inner">
+    <div class="reveal">
+      <span class="section-tag">Built for Safety & Trust</span>
+      <h2 class="section-title">EVERYTHING YOU NEED</h2>
+      <p class="section-sub">Every feature is designed around one question: how do we make this safer and easier for both sides?</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card featured reveal">
+        <div class="feature-icon">🔒</div>
+        <div class="feature-title">Escrow Payments</div>
+        <div class="feature-desc">Your money is never released to the operator until they confirm your seat. If they don't respond within 24 hours, you're refunded automatically — no questions asked.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🪪</div>
+        <div class="feature-title">ID-Verified Riders</div>
+        <div class="feature-desc">Every passenger uploads their SA ID document and a matching selfie. Drivers know exactly who is boarding their vehicle.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">✅</div>
+        <div class="feature-title">Vetted Operators</div>
+        <div class="feature-desc">Every operator submits CIPC registration, PDP / operator's licence and roadworthy certificates before they can list a single shuttle.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">📍</div>
+        <div class="feature-title">Driver & Vehicle Profiles</div>
+        <div class="feature-desc">Before you book, you can see the assigned driver's name, photo and PDP number, plus the vehicle make, colour and registration plate.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">💰</div>
+        <div class="feature-title">Competitive Pricing</div>
+        <div class="feature-desc">Multiple operators compete on the same event page. Sort by cheapest or top-rated. Operators set their own prices — the market keeps it fair.</div>
+      </div>
+      <div class="feature-card featured reveal">
+        <div class="feature-icon">⭐</div>
+        <div class="feature-title">Reviews & Ratings</div>
+        <div class="feature-desc">After every trip, riders rate their experience. Operators with consistently high ratings build a visible reputation that drives more bookings.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🎪</div>
+        <div class="feature-title">All Event Types</div>
+        <div class="feature-desc">Festivals, concerts, sports matches, corporate events. If people need to get there, Shuttlr lists shuttles for it.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">📱</div>
+        <div class="feature-title">Web + Android App</div>
+        <div class="feature-desc">Accessible on any browser via shuttlr.co.za, and available on Google Play for Android. iOS coming in 2027.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">💬</div>
+        <div class="feature-title">WhatsApp Notifications</div>
+        <div class="feature-desc">Booking confirmations, seat alerts and payment updates sent directly to your WhatsApp. No app notification fumbling.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TRUST ═══ -->
+<section id="trust">
+  <div class="trust-layout">
+    <div>
+      <span class="section-tag reveal">Safety First</span>
+      <h2 class="section-title reveal">TRUST ON<br>BOTH SIDES</h2>
+      <p class="section-sub reveal">Shuttlr protects passengers AND operators. Safety isn't a feature — it's the foundation.</p>
+      <div class="trust-items">
+        <div class="trust-item-row">
+          <div class="trust-item-icon">👁️</div>
+          <div>
+            <div class="trust-item-title">Full Transparency Before Booking</div>
+            <div class="trust-item-desc">See who is driving, what vehicle is coming, and its plate number before you pay a cent.</div>
+          </div>
+        </div>
+        <div class="trust-item-row">
+          <div class="trust-item-icon">🔐</div>
+          <div>
+            <div class="trust-item-title">Passenger Identity for Drivers</div>
+            <div class="trust-item-desc">Drivers see verified passenger profiles — name, photo, trip history. No anonymous strangers on board.</div>
+          </div>
+        </div>
+        <div class="trust-item-row">
+          <div class="trust-item-icon">⚖️</div>
+          <div>
+            <div class="trust-item-title">POPIA Compliant</div>
+            <div class="trust-item-desc">All personal data processed in accordance with South Africa's Protection of Personal Information Act.</div>
+          </div>
+        </div>
+        <div class="trust-item-row">
+          <div class="trust-item-icon">🚨</div>
+          <div>
+            <div class="trust-item-title">In-App Reporting</div>
+            <div class="trust-item-desc">Any incident can be reported directly in the app. Operators and riders can be flagged and removed.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="trust-visual reveal">
+      <div style="font-size:11px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:16px;">Sample Verified Listing</div>
+      <div class="trust-card-row">
+        <div class="trust-card-emoji">🚐</div>
+        <div class="trust-card-info">
+          <div class="trust-card-title">Cape Roller Shuttles</div>
+          <div class="trust-card-sub">Rocking the Daisies · 2 Oct 2026 · 07:00</div>
+        </div>
+        <span class="trust-badge badge-green">✓ Verified</span>
+      </div>
+      <div class="trust-card-row">
+        <div class="trust-card-emoji">👨🏾</div>
+        <div class="trust-card-info">
+          <div class="trust-card-title">Sipho Dlamini</div>
+          <div class="trust-card-sub">PDP: PDP123456 · Driver</div>
+        </div>
+        <span class="trust-badge badge-green">✓ PDP</span>
+      </div>
+      <div class="trust-card-row">
+        <div class="trust-card-emoji">🚗</div>
+        <div class="trust-card-info">
+          <div class="trust-card-title">CA 123-456 · Toyota Quantum</div>
+          <div class="trust-card-sub">White · 16 seats · Roadworthy Jan 2027</div>
+        </div>
+        <span class="trust-badge badge-green">✓ RW</span>
+      </div>
+      <div class="trust-card-row">
+        <div class="trust-card-emoji">🔒</div>
+        <div class="trust-card-info">
+          <div class="trust-card-title">Escrow Payment</div>
+          <div class="trust-card-sub">Held until driver confirms · Auto-refund in 24h</div>
+        </div>
+        <span class="trust-badge badge-green">Protected</span>
+      </div>
+      <div style="margin-top:16px;padding:14px;background:rgba(200,240,74,0.06);border:1px solid rgba(200,240,74,0.15);border-radius:10px;font-size:13px;color:var(--muted);">
+        💡 This is exactly what passengers see before every booking on Shuttlr.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ REGISTER ═══ -->
+<section id="register">
+  <div class="reveal" style="margin-bottom:48px;">
+    <span class="section-tag">Get Involved</span>
+    <h2 class="section-title">JOIN SHUTTLR</h2>
+    <p class="section-sub">Whether you need a ride or you run a shuttle service — there's a place for you on Shuttlr.</p>
+  </div>
+  <div class="register-grid">
+    <!-- Rider -->
+    <div class="register-card reveal">
+      <div class="register-card-header">
+        <div class="register-card-icon">🎫</div>
+        <div class="register-card-title">I'M A RIDER</div>
+        <div class="register-card-sub">I want to find and book verified shuttles to events near me.</div>
+      </div>
+      <div class="register-card-body">
+        <ul class="reg-steps">
+          <li class="reg-step">
+            <div class="reg-step-num">1</div>
+            <div class="reg-step-text">
+              <div class="reg-step-title">Create your account</div>
+              <div class="reg-step-sub">Name, email, phone — takes 60 seconds</div>
+            </div>
+          </li>
+          <li class="reg-step">
+            <div class="reg-step-num">2</div>
+            <div class="reg-step-text">
+              <div class="reg-step-title">Verify your SA ID</div>
+              <div class="reg-step-sub">Upload green ID book or Smart ID + selfie</div>
+            </div>
+          </li>
+          <li class="reg-step">
+            <div class="reg-step-num">3</div>
+            <div class="reg-step-text">
+              <div class="reg-step-title">Add a payment card</div>
+              <div class="reg-step-sub">Secured via Peach Payments — tokenised, never stored raw</div>
+            </div>
+          </li>
+          <li class="reg-step">
+            <div class="reg-step-num">4</div>
+            <div class="reg-step-text">
+              <div class="reg-step-title">Browse events & book</div>
+              <div class="reg-step-sub">Compare operators, pick your seat, pay securely</div>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="register-card-footer">
+        <button class="btn-primary" style="width:100%;padding:14px;" onclick="document.getElementById('waitlist').scrollIntoView({behavior:'smooth'})">
+          Join Rider Waitlist →
+        </button>
+      </div>
+    </div>
+
+    <!-- Operator -->
+    <div class="register-card reveal">
+      <div class="register-card-header">
+        <div class="register-card-icon">🚐</div>
+        <div class="register-card-title">I'M AN OPERATOR</div>
+        <div class="register-card-sub">I run a shuttle service and want to reach thousands of event-goers.</div>
+      </div>
+      <div class="register-card-body">
+        <ul class="reg-steps">
+          <li class="reg-step">
+            <div class="reg-step-num">1</div>
+            <div class="reg-step-text">
+              <div class="reg-step-title">Register your company</div>
+              <div class="reg-step-sub">CIPC number, business email, WhatsApp</div>
+            </div>
+          </li>
+          <li class="reg-step">
+            <div class="reg-step-num">2</div>
+            <div class="reg-step-text">
+              <div class="reg-step-title">Submit owner ID + selfie</div>
+              <div class="reg-step-sub">SA ID document and face photo for accountability</div>
+            </div>
+          </li>
+          <li class="reg-step">
+            <div class="reg-step-num">3</div>
+            <div class="reg-step-text">
+              <div class="reg-step-title">Upload documents</div>
+              <div class="reg-step-sub">CIPC cert, PDP / operator's licence, roadworthy certs</div>
+            </div>
+          </li>
+          <li class="reg-step">
+            <div class="reg-step-num">4</div>
+            <div class="reg-step-text">
+              <div class="reg-step-title">Add drivers & vehicles</div>
+              <div class="reg-step-sub">Each driver photo + PDP, each vehicle plate + roadworthy</div>
+            </div>
+          </li>
+          <li class="reg-step">
+            <div class="reg-step-num">5</div>
+            <div class="reg-step-text">
+              <div class="reg-step-title">Go live & start earning</div>
+              <div class="reg-step-sub">Set your own prices. Only 10% commission on confirmed bookings</div>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="register-card-footer">
+        <button class="btn-primary" style="width:100%;padding:14px;" onclick="document.getElementById('waitlist').scrollIntoView({behavior:'smooth'})">
+          Register as Operator →
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FAQ ═══ -->
+<section id="faq">
+  <div class="faq-inner">
+    <div class="reveal" style="text-align:center;">
+      <span class="section-tag">Got Questions?</span>
+      <h2 class="section-title">FREQUENTLY ASKED</h2>
+    </div>
+    <div class="faq-list" id="faqList">
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          When is Shuttlr launching?
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-answer"><p>Shuttlr is targeting a launch in time for Rocking the Daisies 2026 (October 2026) in Cape Town. The web app and Android app on Google Play will launch simultaneously. Join the waitlist above to be notified the moment bookings go live.</p></div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          Is Shuttlr free to use for passengers?
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-answer"><p>Yes — downloading the app and creating an account is completely free. You only pay when you book a shuttle, and the price you see is the price you pay. No booking fees are added to the passenger price. Operators pay Shuttlr a 10% commission from what they earn.</p></div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          What happens if the operator doesn't confirm my booking?
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-answer"><p>Your payment is held in escrow and never touches the operator's account until they confirm your seat. If an operator does not respond within 24 hours, your full payment is automatically refunded — no forms, no waiting, no hassle. This is built into the core of how Shuttlr works.</p></div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          How does Shuttlr verify shuttle operators?
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-answer"><p>Every operator goes through a 5-step verification process before their listings go public: (1) Company registration with CIPC number, (2) Owner identity — SA ID document + selfie, (3) Document upload — CIPC cert, PDP / operator's licence, roadworthy certificates, (4) Driver registration — each driver submits their PDP and a photo, (5) Vehicle registration — each vehicle's plate, make and roadworthy cert is logged. Our team reviews all documents manually before approval.</p></div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          Why do I need to verify my ID as a passenger?
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-answer"><p>ID verification protects everyone. Drivers know exactly who is boarding their vehicle. It reduces no-shows, builds accountability and creates a safer environment for both sides. Your ID number and documents are reviewed only by Shuttlr admin — they are never shared with operators, drivers or other passengers. Only your name and profile photo are visible to drivers.</p></div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          How much does it cost to list as an operator?
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-answer"><p>Registration and listing are completely free. Shuttlr only earns when you earn — we deduct a 10% commission from each confirmed booking payment. There are no monthly fees, no upfront costs and no charge for listings that don't convert to bookings.</p></div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          Which cities will Shuttlr operate in at launch?
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-answer"><p>Shuttlr will launch in Cape Town and Johannesburg, covering events in the Western Cape and Gauteng regions. Durban and Pretoria are planned for Q4 2026. Operators from any city can register now to be ready for when their region goes live.</p></div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          Is there an iOS app?
+          <span class="faq-icon">+</span>
+        </div>
+        <div class="faq-answer"><p>At launch, Shuttlr will be available on Android (Google Play) and via the web app at shuttlr.co.za — which works perfectly on any iPhone browser. A native iOS app is planned for 2027.</p></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SOCIAL ═══ -->
+<section id="social">
+  <div class="reveal">
+    <span class="section-tag">Stay Connected</span>
+    <h2 class="section-title">FOLLOW THE JOURNEY</h2>
+    <p class="section-sub" style="margin:0 auto 0;max-width:480px;">Be first to know about new events, operator spotlights and launch updates.</p>
+  </div>
+  <div class="social-handles reveal">
+    <a href="#" class="social-handle"><span class="social-handle-icon">📸</span> @shuttlrza</a>
+    <a href="#" class="social-handle"><span class="social-handle-icon">🎵</span> @shuttlrza</a>
+    <a href="#" class="social-handle"><span class="social-handle-icon">💬</span> WhatsApp Updates</a>
+    <a href="#" class="social-handle"><span class="social-handle-icon">🐦</span> @shuttlrza</a>
+    <a href="#" class="social-handle"><span class="social-handle-icon">👥</span> Facebook Page</a>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">
+      <div class="footer-logo-box">S</div>
+      <span class="footer-logo-text">SHUTTLR</span>
+    </div>
+    <div class="footer-links">
+      <a href="#how">How It Works</a>
+      <a href="#features">Features</a>
+      <a href="#register">Register</a>
+      <a href="#faq">FAQ</a>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms</a>
+    </div>
+    <div class="footer-copy">© 2026 Shuttlr · Independent Transport Marketplace · Not affiliated with any event organiser</div>
+  </div>
+</footer>
+
+<!-- ═══════════════════════════════════════
+   JAVASCRIPT
+═══════════════════════════════════════ -->
+<script>
+/* ── Cursor ── */
+const cursor = document.getElementById('cursor');
+const ring   = document.getElementById('cursor-ring');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+function animateCursor() {
+  rx += (mx - rx) * 0.15;
+  ry += (my - ry) * 0.15;
+  cursor.style.left = mx + 'px';
+  cursor.style.top  = my + 'px';
+  ring.style.left   = rx + 'px';
+  ring.style.top    = ry + 'px';
+  requestAnimationFrame(animateCursor);
+}
+animateCursor();
+document.querySelectorAll('a, button, .faq-question, .how-step, .feature-card, .register-card').forEach(el => {
+  el.addEventListener('mouseenter', () => { cursor.style.width = '20px'; cursor.style.height = '20px'; ring.style.width = '50px'; ring.style.height = '50px'; });
+  el.addEventListener('mouseleave', () => { cursor.style.width = '12px'; cursor.style.height = '12px'; ring.style.width = '36px'; ring.style.height = '36px'; });
+});
+
+/* ── Nav scroll ── */
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 40);
+});
+
+/* ── Mobile menu ── */
+function toggleMenu() {
+  const d = document.getElementById('mobileDrawer');
+  const b = document.getElementById('menuBtn');
+  d.classList.toggle('open');
+  b.textContent = d.classList.contains('open') ? '✕' : '☰';
+}
+
+/* ── Countdown ── */
+function updateCountdown() {
+  const target = new Date('2026-10-02T06:00:00');
+  const now    = new Date();
+  const diff   = target - now;
+  if (diff <= 0) { document.getElementById('cdDays').textContent = '00'; return; }
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  document.getElementById('cdDays').textContent  = String(d).padStart(2,'0');
+  document.getElementById('cdHours').textContent = String(h).padStart(2,'0');
+  document.getElementById('cdMins').textContent  = String(m).padStart(2,'0');
+  document.getElementById('cdSecs').textContent  = String(s).padStart(2,'0');
+}
+setInterval(updateCountdown, 1000);
+updateCountdown();
+
+/* ── Animated counters ── */
+function animateCount(el, target, suffix='', duration=1800) {
+  let start = 0;
+  const step = target / (duration / 16);
+  const t = setInterval(() => {
+    start = Math.min(start + step, target);
+    el.textContent = Math.floor(start) + suffix;
+    if (start >= target) clearInterval(t);
+  }, 16);
+}
+let statsAnimated = false;
+const statsObserver = new IntersectionObserver(entries => {
+  if (entries[0].isIntersecting && !statsAnimated) {
+    statsAnimated = true;
+    animateCount(document.getElementById('statEvents'), 12, '+');
+    animateCount(document.getElementById('statOps'), 8, '+');
+    animateCount(document.getElementById('statWait'), 847, '+');
+  }
+}, { threshold: 0.3 });
+const heroStats = document.querySelector('.hero-stats');
+if (heroStats) statsObserver.observe(heroStats);
+
+/* ── How it works tabs ── */
+function switchHowTab(tab, btn) {
+  document.getElementById('howRider').classList.remove('active');
+  document.getElementById('howOperator').classList.remove('active');
+  document.querySelectorAll('.how-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById(tab === 'rider' ? 'howRider' : 'howOperator').classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ── FAQ ── */
+function toggleFaq(el) {
+  const item = el.parentElement;
+  const isOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+  if (!isOpen) item.classList.add('open');
+}
+
+/* ── Waitlist ── */
+let waitlistCount = 847;
+function joinWaitlist() {
+  const emailEl = document.getElementById('waitlistEmail');
+  const email = emailEl.value.trim();
+  if (!email || !email.includes('@')) {
+    emailEl.style.borderColor = 'var(--red)';
+    emailEl.focus();
+    setTimeout(() => emailEl.style.borderColor = '', 1500);
+    return;
+  }
+  waitlistCount++;
+  document.getElementById('waitlistForm').style.display = 'none';
+  document.getElementById('waitlistSuccess').style.display = 'block';
+  document.getElementById('waitlistNum').textContent = waitlistCount;
+}
+
+/* ── Events Ticker ── */
+const events = [
+  { emoji:'🌼', name:'Rocking the Daisies', loc:'Cape Town · Oct 2026' },
+  { emoji:'⚡', name:'Ultra South Africa',  loc:'Johannesburg · Feb 2026' },
+  { emoji:'⚽', name:'Soweto Derby',         loc:'FNB Stadium · Apr 2026' },
+  { emoji:'🌌', name:'Coldplay',             loc:'Cape Town · Mar 2026' },
+  { emoji:'🎷', name:'Cape Town Jazz Fest',  loc:'CTICC · Mar 2026' },
+  { emoji:'🎸', name:'Oppikoppi',            loc:'Northam · Aug 2026' },
+  { emoji:'🏉', name:'Springbok Test Match', loc:'Ellis Park · Jul 2026' },
+  { emoji:'🎤', name:'Sun City Festival',    loc:'Sun City · Nov 2026' },
+];
+const track = document.getElementById('tickerTrack');
+const doubled = [...events, ...events];
+doubled.forEach(ev => {
+  const item = document.createElement('div');
+  item.className = 'ticker-item';
+  item.innerHTML = `<span class="ticker-emoji">${ev.emoji}</span><span class="ticker-name">${ev.name}</span><span class="ticker-loc">${ev.loc}</span><span class="ticker-dot"></span>`;
+  track.appendChild(item);
+});
+
+/* ── Scroll reveal ── */
+const revealObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('visible'); }
+  });
+}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+/* ── Trust item reveals ── */
+const trustObserver = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      document.querySelectorAll('.trust-item-row').forEach((el, i) => {
+        setTimeout(() => el.classList.add('visible'), i * 120);
+      });
+    }
+  });
+}, { threshold: 0.2 });
+const trustSection = document.getElementById('trust');
+if (trustSection) trustObserver.observe(trustSection);
+
+/* ── Stagger how-step reveals ── */
+document.querySelectorAll('.how-step').forEach((el, i) => {
+  el.style.transitionDelay = (i * 0.08) + 's';
+});
+</script>
+</body>
+</html>
